@@ -1,3 +1,9 @@
+0.2.1
+- Properly updated the main parts patch for Knes and CNAR compatibility
+- Implemented AlexSkylark's adjustments and new lost and found node in place of having the stock nodes sitting on the left side of the tree
+	- anyone wanting to make a patch note that I've also added the gptt_exclude node to hold parts not intended to appear in the tree (so they don't end up in lost and found), which then gets removed before gameplay.
+- Added the Sterling wind turbine, but will need to revisit the other World Power parts later.
+
 0.2
 - Added mod support:
 	- Knes: Mostly works quite well with some good early rockets, but a few odd parts; overpowered rcs units placed in Electric Engine Concepts on the logic that we could imagine they're resistojets?
