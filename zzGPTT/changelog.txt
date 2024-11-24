@@ -1,3 +1,6 @@
+0.2.2
+- Switched the id of starting node back to 'start' to fix issues with part unlocking and adjusted stock nodes patch accordingly
+
 0.2.1
 - Properly updated the main parts patch for Knes and CNAR compatibility
 - Implemented AlexSkylark's adjustments and new lost and found node in place of having the stock nodes sitting on the left side of the tree
