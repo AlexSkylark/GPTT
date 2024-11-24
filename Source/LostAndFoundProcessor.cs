@@ -5,65 +5,56 @@ using System.Linq;
 using KSP.UI;
 using KSP.UI.Screens;
 using System.Collections;
+using System;
 
 namespace GPTT
 {
-    [DefaultExecutionOrder(9999)]
-    public class LostAndFoundHeader : MonoBehaviour
-    {
-        private RectTransform Anchor;
-        private int headerSpacing;
-        private int margin = 0;
-
-        public void AnchorObject(Transform transformAnchor, int spacing)
-        {
-            Anchor = transformAnchor.GetComponent<RectTransform>();
-            headerSpacing = spacing;
-        }
-
-        void Update()
-        {
-            // Continuously reset the´position to follow the anchor
-            if (Anchor != null)
-            {
-                transform.position = new Vector2(Anchor.position.x - (Anchor.sizeDelta.x / 2), 
-                    Anchor.position.y + (Anchor.sizeDelta.y/2) + (headerSpacing + margin));
-            }
-        }
-    }
+    
 
     [KSPAddon(KSPAddon.Startup.SpaceCentre, false)]
     public class LostAndFoundProcessor : MonoBehaviour
     {
         private bool isInitialized = false;
-        private int headerSpacing = 26;
+        private int headerSpacing = 32;
+        GameObject generalPartsList;
 
         public void Start()
         {
             Debug.Log("[GPTT-LostAndFoundProcessor] Initialized.");
+            isInitialized = false;
         }
 
         public void Update()
         {
             var headerTextObject = GameObject.Find("_UIMaster/MainCanvas/ResearchAndDevelopment/ContentSpace/Panel TechTree/content_space/Panel_Right/Panel node/TopNodenameEtc/StratTextHeader/");
-            if (ResearchAndDevelopment.Instance != null && GameObject.Find("gptt_node_lostandfound") != null && headerTextObject != null)
-            {
-                string headerText = headerTextObject.GetComponentInChildren<TMPro.TextMeshProUGUI>().text;
-                if (headerText.ToUpper() == "LOST AND FOUND")
+            if (ResearchAndDevelopment.Instance != null) {
+                if (GameObject.Find("gptt_node_lostandfound") != null && headerTextObject != null)
                 {
-                    if (!isInitialized)
+                    string headerText = headerTextObject.GetComponentInChildren<TMPro.TextMeshProUGUI>().text;
+                    var panelNodeObj = headerTextObject.transform.parent.parent.gameObject;
+
+                    if (panelNodeObj.activeSelf && headerText.ToUpper() == "LOST AND FOUND")
                     {
-                        isInitialized = true;
-                        ProcessLostAndFoundNode();
-                    } 
-                }
-                else
-                {
-                    foreach (var header in GameObject.FindObjectsOfType<LostAndFoundHeader>())
-                    {
-                        header.gameObject.DestroyGameObject();
+                        if (!isInitialized)
+                        {
+                            isInitialized = true;
+                            ProcessLostAndFoundNode();
+                        } else if (generalPartsList.transform.GetChild(0).name.ToUpper().Contains("DUMMY"))
+                        {
+                            Utilities.DestroyObjectsWithComponent<LostAndFoundNodeElement>(generalPartsList.transform.parent);
+                            generalPartsList.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.MinSize;
+                            ProcessLostAndFoundNode();
+                        }
                     }
-                    isInitialized = false;
+                    else
+                    {
+                        if (isInitialized)
+                        {
+                            Utilities.DestroyObjectsWithComponent<LostAndFoundNodeElement>(generalPartsList.transform.parent);                            
+                            generalPartsList.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.MinSize;
+                            isInitialized = false;
+                        }
+                    }
                 }
             }
         }
@@ -101,7 +92,7 @@ namespace GPTT
                     continue;
 
                 // Determine the mod origin or assign "Unknown Mod" if not specified
-                string modOrigin = GetModOriginFromPart(part);
+                string modOrigin = Utilities.FindPartMod(part);
 
                 // Add part to the corresponding mod group
                 if (!groupedParts.ContainsKey(modOrigin))
@@ -131,10 +122,10 @@ namespace GPTT
         private IEnumerator CustomizeTechTreeUI(Dictionary<string, List<AvailablePart>> groupedParts)
         {
             // Log that UI customization is starting
-            Debug.Log("[LostAndFoundProcessor] Customizing the tech tree UI...");
+            Debug.Log("[GPTT-LostAndFoundProcessor] Customizing the tech tree UI...");
 
             // Locate the parts list in the UI hierarchy
-            var generalPartsList = GameObject.Find("_UIMaster/MainCanvas/ResearchAndDevelopment/ContentSpace/Panel TechTree/" +
+            generalPartsList = GameObject.Find("_UIMaster/MainCanvas/ResearchAndDevelopment/ContentSpace/Panel TechTree/" +
                     "content_space/Panel_Right/Panel node/PartList/ListAndScrollbar/Panel/" +
                     "ScrollRect/PartList");
 
@@ -145,15 +136,16 @@ namespace GPTT
             // Iterate through each mod group in the grouped parts dictionary
             foreach (var group in groupedParts)
             {                
-                Debug.Log($"[LostAndFoundProcessor] Adding header for mod group: {group.Key}");
+                Debug.Log($"[GPTT-LostAndFoundProcessor] Adding header for mod group: {group.Key}");
 
                 // Dynamically create a header GameObject for the mod group
-                GameObject header = CreateHeaderPrefab(group.Key);
+                GameObject header = Utilities.CreateHeaderPrefab(group.Key);
+                header.AddComponent<LostAndFoundNodeElement>();
 
                 // Create a dummy object to use for padding between groups
                 GameObject dummy = new GameObject("ModHeaderDummy");
                 dummy.AddComponent<RectTransform>();
-                dummy.AddComponent<LostAndFoundHeader>();
+                dummy.AddComponent<LostAndFoundNodeElement>();
 
                 // Retrieve and order parts in this group based on their mod of origin
                 var orderedParts = generalPartsList.GetComponent<RDPartList>().listItems
@@ -174,7 +166,6 @@ namespace GPTT
                 // Set the header's parent to the parts list's parent and position it at the top of the group's parts
                 header.transform.SetParent(generalPartsList.transform.parent);
                 header.transform.position = orderedParts[0].transform.position; // Position the header at the first part's location
-                header.layer = 31;
 
                 // Reposition the group's parts to follow the header and adjust their vertical position
                 for (int i = siblingIndex; i < orderedParts.Length + siblingIndex; i++)
@@ -187,7 +178,7 @@ namespace GPTT
                 }
 
                 // Anchor the header to the first part's StateButton for alignment and spacing
-                header.GetComponent<LostAndFoundHeader>().AnchorObject(orderedParts.First().GetChild("StateButton").transform, headerSpacing);
+                header.GetComponent<LostAndFoundNodeElement>().AnchorObject(orderedParts.First().GetChild("StateButton").transform, headerSpacing);
 
                 // Increment the siblingIndex to account for the parts in this group
                 siblingIndex += orderedParts.Length;
@@ -199,6 +190,7 @@ namespace GPTT
             // Wait for one frame to allow the UI to update (if necessary)
             yield return null;
 
+            
             // Adjust the content size fitter to stop constraining the vertical fit
             generalPartsList.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.Unconstrained;
 
@@ -208,41 +200,6 @@ namespace GPTT
                         listRect.sizeDelta.x,
                         listRect.sizeDelta.y + (headerSpacing * (groupIndex - 1)) // Add spacing for each group
                     );
-        }
-
-
-        private GameObject CreateHeaderPrefab(string modName)
-        {
-            // Create the parent GameObject for the header
-            GameObject header = new GameObject("ModHeader");
-            RectTransform rectTransform = header.AddComponent<RectTransform>();
-            rectTransform.sizeDelta = new Vector2(120, 20); // Set desired size
-            rectTransform.pivot = new Vector2(0, 1);
-
-            // add a tag
-            header.AddComponent<LostAndFoundHeader>();
-
-            // Add an optional background
-            Image background = header.AddComponent<Image>();
-            background.color = new Color(0.1f, 0.1f, 0.1f, 0.8f); // Semi-transparent dark background
-
-            // Create the Text child for displaying the mod name
-            GameObject textObject = new GameObject("ModNameText");
-            textObject.transform.SetParent(header.transform, false);
-
-            RectTransform textRectTransform = textObject.AddComponent<RectTransform>();
-            textRectTransform.anchorMin = new Vector2(0, 0);
-            textRectTransform.anchorMax = new Vector2(1, 1);
-            textRectTransform.sizeDelta = Vector2.zero; // Fill the header
-
-            Text modNameText = textObject.AddComponent<Text>();
-            modNameText.text = modName;
-            modNameText.font = Resources.GetBuiltinResource<Font>("Arial.ttf"); // Use default font
-            modNameText.fontSize = 14;
-            modNameText.alignment = TextAnchor.MiddleLeft;
-            modNameText.color = Color.white;
-
-            return header;
         }        
     }
 }
