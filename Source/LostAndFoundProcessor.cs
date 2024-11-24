@@ -20,7 +20,7 @@ namespace GPTT
 
         public void Start()
         {
-            Debug.Log("[GPTT-LostAndFoundProcessor] Initialized.");
+            Debug.Log("[GPTT-LostFound] Initialized.");
             isInitialized = false;
         }
 
@@ -39,7 +39,8 @@ namespace GPTT
                         {
                             isInitialized = true;
                             ProcessLostAndFoundNode();
-                        } else if (generalPartsList.transform.GetChild(0).name.ToUpper().Contains("DUMMY"))
+                        } else if (generalPartsList != null && generalPartsList.transform.childCount > 0 
+                            && generalPartsList.transform.GetChild(0).name.ToUpper().Contains("DUMMY"))
                         {
                             Utilities.DestroyObjectsWithComponent<LostAndFoundNodeElement>(generalPartsList.transform.parent);
                             generalPartsList.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.MinSize;
@@ -61,7 +62,12 @@ namespace GPTT
 
         private void ProcessLostAndFoundNode()
         {
-            Debug.Log("[GPTT-LostAndFoundProcessor] Processing gptt_lostandfound node...");
+            Debug.Log("[GPTT-LostFound] Processing gptt_lostandfound node...");
+
+            // Locate the parts list in the UI hierarchy
+            generalPartsList = GameObject.Find("_UIMaster/MainCanvas/ResearchAndDevelopment/ContentSpace/Panel TechTree/" +
+                    "content_space/Panel_Right/Panel node/PartList/ListAndScrollbar/Panel/" +
+                    "ScrollRect/PartList");
 
             // Group parts by mod in the "gptt_lostandfound" node
             var groupedParts = GroupPartsInNode("gptt_lostandfound");
@@ -69,15 +75,15 @@ namespace GPTT
             // Log results or prepare for UI customization
             foreach (var group in groupedParts)
             {
-                Debug.Log($"[GPTT-LostAndFoundProcessor] Mod: {group.Key}, Parts Count: {group.Value.Count}");
+                Debug.Log($"[GPTT-LostFound] Mod: {group.Key}, Parts Count: {group.Value.Count}");
                 foreach (var part in group.Value)
                 {
-                    Debug.Log($" - {part.title}");
+                    Debug.Log($"[GPTT-LostFound] Unsupported Part: {part.title}");
                 }
             }
 
             // You can call a UI customization function here if needed
-            StartCoroutine(CustomizeTechTreeUI(groupedParts));
+            // StartCoroutine(CustomizeTechTreeUI(groupedParts));
         }
 
         private Dictionary<string, List<AvailablePart>> GroupPartsInNode(string techID)
@@ -85,7 +91,7 @@ namespace GPTT
             Dictionary<string, List<AvailablePart>> groupedParts = new Dictionary<string, List<AvailablePart>>();
 
             // Iterate over all loaded parts
-            foreach (var part in PartLoader.LoadedPartsList)
+            foreach (var part in generalPartsList.GetComponent<RDPartList>().listItems.Select(p => p.myPart))
             {
                 // Check if the part belongs to the specified node
                 if (part.TechRequired != techID)
@@ -122,13 +128,8 @@ namespace GPTT
         private IEnumerator CustomizeTechTreeUI(Dictionary<string, List<AvailablePart>> groupedParts)
         {
             // Log that UI customization is starting
-            Debug.Log("[GPTT-LostAndFoundProcessor] Customizing the tech tree UI...");
-
-            // Locate the parts list in the UI hierarchy
-            generalPartsList = GameObject.Find("_UIMaster/MainCanvas/ResearchAndDevelopment/ContentSpace/Panel TechTree/" +
-                    "content_space/Panel_Right/Panel node/PartList/ListAndScrollbar/Panel/" +
-                    "ScrollRect/PartList");
-
+            Debug.Log("[GPTT-LostFound] Customizing the tech tree UI...");
+           
             // Initialize sibling index (position in the list) and group index (used for spacing headers)
             int siblingIndex = 0;
             int groupIndex = 1;
@@ -136,7 +137,7 @@ namespace GPTT
             // Iterate through each mod group in the grouped parts dictionary
             foreach (var group in groupedParts)
             {                
-                Debug.Log($"[GPTT-LostAndFoundProcessor] Adding header for mod group: {group.Key}");
+                Debug.Log($"[GPTT-LostFound] Adding header for mod group: {group.Key}");
 
                 // Dynamically create a header GameObject for the mod group
                 GameObject header = Utilities.CreateHeaderPrefab(group.Key);
@@ -149,7 +150,7 @@ namespace GPTT
 
                 // Retrieve and order parts in this group based on their mod of origin
                 var orderedParts = generalPartsList.GetComponent<RDPartList>().listItems
-                                        .Where(p => group.Value.Any(gp => gp == p.myPart)) // Filter parts belonging to the group
+                                        .Where(p => group.Value.Any(gp => gp.partUrl == p.myPart.partUrl)) // Filter parts belonging to the group
                                         .Select(pl => pl.transform.parent.gameObject)     // Get the parent GameObject of each part
                                         .OrderBy(go => go.GetComponentInChildren<RDPartListItem>().myPart.title) // Sort by part title
                                         .ToArray();
