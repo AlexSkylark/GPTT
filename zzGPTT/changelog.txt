@@ -1,3 +1,10 @@
+0.2.3
+- Added mod support:
+	- Boring Crew Services: airbag placed in advanced parachutes for now, will need to consider a more general approach for balloons and inflatables eventually
+	- TAC Life Support first pass: parts added, not sure how the overall balance plays yet
+- Attempted to get unsupported parts upgrades to go in Lost and Found, not sure it works great so far.
+- Adjusted patch ordering to get it to play nice with KCT, you still get some logspam the first time you research a tech in a new save, but it clears with the next scene change.
+
 0.2.2
 - Switched the id of starting node back to 'start' to fix issues with part unlocking and adjusted stock nodes patch accordingly
 
