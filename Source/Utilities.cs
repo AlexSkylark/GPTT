@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using TMPro;
 using UnityEngine;
@@ -11,7 +12,7 @@ namespace GPTT
     public class LostAndFoundNodeElement : MonoBehaviour
     {
         private RectTransform Anchor;
-        private const int SPACER_MARGIN = 6;
+        private const int SPACER_MARGIN = 14;
 
         public void AnchorObject(Transform transformAnchor, int spacing)
         {
@@ -35,7 +36,7 @@ namespace GPTT
         {
             // Find all objects in the scene that have the specified component
             T[] objectsWithComponent = parent.GetComponentsInChildren<T>();
-            Debug.Log($"[GPTT-LostFound] Found {objectsWithComponent.Length} GameObjects with component: {typeof(T).Name}."); 
+            Debug.Log($"[GPTT-LostFound] Found {objectsWithComponent.Length} GameObjects with component: {typeof(T).Name}.");
 
             // Iterate through each object and destroy its GameObject
             foreach (T obj in objectsWithComponent)
@@ -60,46 +61,31 @@ namespace GPTT
             return id[0];
         }
 
-        public static GameObject CreateHeaderPrefab(string modName)
+        public static GameObject CreateHeaderPrefab(AssetBundle assetBundle, string modName)
         {
-            // Create the parent GameObject for the header
-            GameObject header = new GameObject("ModHeader");
-            RectTransform headerRectTransform = header.AddComponent<RectTransform>();
-            headerRectTransform.sizeDelta = new Vector2(270, 20); // Adjust size for visibility
-            headerRectTransform.anchorMin = Vector2.zero;
-            headerRectTransform.anchorMax = Vector2.one;
-            headerRectTransform.pivot = new Vector2(0, 0); // Center pivot
+            GameObject header = GameObject.Instantiate(assetBundle.LoadAsset("round-rectangle") as GameObject);
+            header.GetChild("text-object").AddComponent<TextMeshProUGUI>();
+            var headerComp = header.AddComponent<AssetPrefabs.RoundRectangle>();
 
-            // Add an optional background
-            Image background = header.AddComponent<Image>();
-            background.color = new Color(0.1f, 0.1f, 0.1f, 0.55f); // Semi-transparent dark background
+            headerComp.rectTransform.sizeDelta = new Vector2(263, 20);
 
-            // Create the Text child for displaying the mod name
-            GameObject textObject = new GameObject("ModNameText");
-            textObject.transform.SetParent(header.transform, false);
+            headerComp.imageComponent.pixelsPerUnitMultiplier = 3.5f;
 
-            RectTransform textRectTransform = textObject.AddComponent<RectTransform>();
-            textRectTransform.anchorMin = new Vector2(0, 0); // Stretch to fill the parent
-            textRectTransform.anchorMax = new Vector2(1, 1);
-            textRectTransform.sizeDelta = Vector2.zero; // No extra size
-            textRectTransform.pivot = new Vector2(0f, 0.5f); // Center pivot
+            headerComp.textRectTransform.anchorMin = new Vector2(0, 0); // Stretch to fill the parent
+            headerComp.textRectTransform.anchorMax = new Vector2(1, 1);
+            headerComp.textRectTransform.sizeDelta = Vector2.zero; // No extra size
+            headerComp.textRectTransform.pivot = new Vector2(0f, 0.5f); // Center pivot
+            
+            headerComp.textObject.text = $"Parts from mod \"{modName}\"";
+            headerComp.textObject.font = UISkinManager.TMPFont; // Use the KSP UI font
+            headerComp.textObject.margin = new Vector4(6, 1, 0, 0); // Set text margins
+            headerComp.textObject.overflowMode = TextOverflowModes.Truncate; // Prevent text overflow
+            headerComp.textObject.enableWordWrapping = false; // Disable word wrapping
+            headerComp.textObject.fontSize = 12;
+            headerComp.textObject.fontWeight = 800;
+            headerComp.textObject.alignment = TextAlignmentOptions.MidlineLeft; // Center align
+            headerComp.textObject.color = Color.white;
 
-            // Configure the TextMeshProUGUI component
-            TextMeshProUGUI modNameText = textObject.AddComponent<TextMeshProUGUI>();
-            modNameText.text = $"Parts from mod \"{modName}\":";
-            modNameText.font = UISkinManager.TMPFont; // Use the KSP UI font
-            modNameText.margin = new Vector4(12, 4, 4, 4); // Set text margins
-            modNameText.overflowMode = TextOverflowModes.Truncate; // Prevent text overflow
-            modNameText.enableWordWrapping = false; // Disable word wrapping
-            modNameText.fontSize = 11;
-            modNameText.fontWeight = 800;
-            modNameText.alignment = TextAlignmentOptions.MidlineLeft; // Center align
-            modNameText.color = Color.white;
-
-            // Ensure proper layering for UI rendering
-            header.SetLayerRecursive(LayerMask.NameToLayer("UI"));
-
-            // Return the header GameObject
             return header;
         }
     }

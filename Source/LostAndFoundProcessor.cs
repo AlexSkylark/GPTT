@@ -6,6 +6,7 @@ using KSP.UI;
 using KSP.UI.Screens;
 using System.Collections;
 using System;
+using System.IO;
 
 namespace GPTT
 {
@@ -15,12 +16,18 @@ namespace GPTT
     public class LostAndFoundProcessor : MonoBehaviour
     {
         private bool isInitialized = false;
-        private int headerSpacing = 32;
+        private int headerSpacing = 24;
         GameObject generalPartsList;
+
+        AssetBundle assetBundle;
 
         public void Start()
         {
             Debug.Log("[GPTT-LostFound] Initialized.");
+
+            string bundlePath = Path.Combine(KSPUtil.ApplicationRootPath, "GameData/zzGPTT/Assets/gptt-enhanced.dat");
+            assetBundle = AssetBundle.LoadFromFile(bundlePath);
+
             isInitialized = false;
         }
 
@@ -83,7 +90,7 @@ namespace GPTT
             }
 
             // You can call a UI customization function here if needed
-            // StartCoroutine(CustomizeTechTreeUI(groupedParts));
+            StartCoroutine(CustomizeTechTreeUI(groupedParts));
         }
 
         private Dictionary<string, List<AvailablePart>> GroupPartsInNode(string techID)
@@ -140,7 +147,7 @@ namespace GPTT
                 Debug.Log($"[GPTT-LostFound] Adding header for mod group: {group.Key}");
 
                 // Dynamically create a header GameObject for the mod group
-                GameObject header = Utilities.CreateHeaderPrefab(group.Key);
+                GameObject header = Utilities.CreateHeaderPrefab(assetBundle, group.Key);
                 header.AddComponent<LostAndFoundNodeElement>();
 
                 // Create a dummy object to use for padding between groups
