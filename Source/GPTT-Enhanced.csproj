@@ -8,7 +8,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>GPTT</RootNamespace>
-    <AssemblyName>GPTT</AssemblyName>
+    <AssemblyName>GPTT-Enhanced</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
@@ -58,7 +58,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CenterView.cs" />
+    <Compile Include="CenterTechTreeView.cs" />
     <Compile Include="LostAndFoundProcessor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RoundRectangle.cs" />
