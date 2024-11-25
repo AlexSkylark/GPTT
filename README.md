@@ -4,12 +4,12 @@ This is an enhanced fork of the **Gradual Progression Tech Tree (GPTT)** mod for
 
 ## Enhancements Included in This Fork
 
-### 2. **Dynamic Grouping for the Lost and Found node by Mod Origin**
+### 1. **Dynamic Grouping for the Lost and Found node by Mod Origin**
 - Parts in the **Lost and Found** node are grouped based on their originating mod.
 - Each group is labeled with a header displaying the mod's name.
 - Makes it easier to identify and manage parts from different mods.
 
-### 3. **UI Enhancements for the Research and Development (R&D) Center**
+### 2. **UI Enhancements for the Research and Development (R&D) Center**
 - **Automatic Centering on Start Node**:
   - When opening the R&D center, the tech tree view automatically centers on the start node.
   - Improves user navigation and reduces the need for manual panning.
